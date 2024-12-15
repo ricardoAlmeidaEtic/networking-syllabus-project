@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat World</title>
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:wght@300&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+    <script type="text/javascript" src="./main.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 style="font-weight: bold;">Chat World 🌍</h1>
+            <p>Connect and chat with the world in real-time</p>
+        </div>
+    </header>
+
+    <main class="chat-container">
+        <section class="chat-window">
+            <!-- Messages will be shown here -->
+        </section>
+
+        <section class="chat-input">
+            <textarea placeholder="Type your message..." id="messageInput"></textarea>
+            <button onclick="sendMessage()">Send</button>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2024 Chat World. All rights reserved.</p>
+    </footer>
+</body>
+</html>

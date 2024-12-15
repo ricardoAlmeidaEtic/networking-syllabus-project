@@ -1,0 +1,40 @@
+services:
+  nginx-proxy:
+    image: nginx:latest
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    networks:
+      - mynetwork
+
+  api:
+    build: ./api
+    container_name: api
+    ports:
+      - "5000:5000"
+    networks:
+      - mynetwork
+
+  chat-world:
+    image: nginx:latest
+    container_name: chat-world
+    volumes:
+      - ./chat-world:/usr/share/nginx/html:ro
+    networks:
+      - mynetwork
+
+  chat-private:
+    image: nginx:latest
+    container_name: chat-private
+    volumes:
+      - ./chat-private:/usr/share/nginx/html:ro
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge
