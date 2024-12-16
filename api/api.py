@@ -1,8 +1,7 @@
 import traceback
 import logging
-import json
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Import CORS
+from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
@@ -11,18 +10,7 @@ CORS(app, resources={r"/api/*": {"origins": ["http://localhost", "https://localh
 
 socketio = SocketIO(app, cors_allowed_origins=["http://localhost", "https://localhost"])
 
-MESSAGES_FILE = 'messages.json'
-
-def initialize_messages_file():
-    try:
-        with open(MESSAGES_FILE, 'x') as file:
-            json.dump([], file)
-    except FileExistsError:
-        pass
-    except Exception as e:
-        print(f"Error initializing messages file: {e}")
-
-initialize_messages_file()
+messages = []
 
 @app.route('/api/message', methods=['POST'])
 def handle_message():
@@ -36,22 +24,7 @@ def handle_message():
         if not message or not isinstance(message, dict):
             return {'error': 'Invalid JSON payload. Expected a JSON object.'}, 400
 
-        with open(MESSAGES_FILE, 'r') as file:
-            try:
-                messages = json.load(file)
-                logging.debug(f"Loaded messages: {messages}")
-                if not isinstance(messages, list):
-                    logging.error("Messages file contains non-list data. Reinitializing...")
-                    messages = []
-            except json.JSONDecodeError as e:
-                logging.error(f"Error loading JSON from file: {e}")
-                return {'error': 'Failed to read messages file'}, 500
-
         messages.append(message)
-
-        with open(MESSAGES_FILE, 'w') as file:
-            json.dump(messages, file, indent=4)
-
         socketio.emit('new_message', message)
 
         return {'message': 'Message received and broadcasted'}, 201
@@ -64,13 +37,48 @@ def handle_message():
 @app.route('/api/message', methods=['GET'])
 def get_messages():
     try:
-        with open(MESSAGES_FILE, 'r') as file:
-            messages = json.load(file)
-            if not isinstance(messages, list):
-                messages = []
         return jsonify(messages), 200
     except Exception as e:
         logging.error(f"Error retrieving messages: {e}")
+        return {'error': 'An unexpected error occurred'}, 500
+
+@app.route('/api/message', methods=['PUT'])
+def update_message():
+    try:
+        data = request.get_json()
+        message_id = data.get("id")
+        new_message = data.get("message")
+
+        if message_id is None or new_message is None:
+            return {'error': 'Missing id or message in payload'}, 400
+
+        for message in messages:
+            if message.get("id") == message_id:
+                message["message"] = new_message
+                return {'message': 'Message updated'}, 200
+
+        return {'error': 'Message not found'}, 404
+    except Exception as e:
+        logging.error(f"Error updating message: {e}")
+        return {'error': 'An unexpected error occurred'}, 500
+
+@app.route('/api/message', methods=['DELETE'])
+def delete_message():
+    try:
+        data = request.get_json()
+        message_id = data.get("id")
+
+        if message_id is None:
+            return {'error': 'Missing id in payload'}, 400
+
+        for message in messages:
+            if message.get("id") == message_id:
+                messages.remove(message)
+                return {'message': 'Message deleted'}, 200
+
+        return {'error': 'Message not found'}, 404
+    except Exception as e:
+        logging.error(f"Error deleting message: {e}")
         return {'error': 'An unexpected error occurred'}, 500
 
 if __name__ == '__main__':
