@@ -1,59 +1,55 @@
-const apiUrl = 'http://localhost:5000/api/data';
-
-// Connect to the Flask-SocketIO server
 const socket = io('http://localhost:5000');
 
-// Listen for new messages
-socket.on('new_message', function (data) {
-    console.log('New message received:', data);
-    // Display the new message on the page
-    const chatWindow = document.querySelector('.chat-window');
-    chatWindow.innerHTML += `<div class="message received">
-                                <span class="user">New User:</span>
-                                <span class="message">${data.value}</span>
-                              </div>`;
+let name = prompt("")
+
+socket.on('new_message', (message) => {
+    console.log('New message received:', message);
+    if(message.user !== name){
+        const chatWindow = document.querySelector('.chat-window');
+        chatWindow.innerHTML += `
+        <div class="message received">
+            <span class="user">${message.user}:</span>
+            <span class="message">${message.message}</span>
+        </div>`;
+    }
 });
 
-// Function to send a chat message (post data)
-async function sendMessage() {
+socket.on('connect', () => {
+    console.log('Connected to the Socket.IO server');
+});
+
+socket.on('connect_error', (error) => {
+    console.error('Connection error:', error);
+});
+
+const sendMessage = async () => {
     const message = document.getElementById('messageInput').value;
-    const postData = { key: "user", value: message };
+    const postData = { user: name, message: message };
 
     try {
-        // Send message as POST request to API
-        const response = await fetch(apiUrl, {
+        console.log('Sending payload:', postData);
+
+        const response = await fetch('http://localhost:5000/api/message', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(postData)
+            body: JSON.stringify(postData)  // Ensure the payload is properly serialized
         });
 
         const result = await response.json();
         console.log('POST response:', result);
-        alert(result.message);
 
-        // Display the sent message on the page
-        const chatWindow = document.querySelector('.chat-window');
-        chatWindow.innerHTML += `<div class="message sent">
-                                    <span class="user">You:</span>
-                                    <span class="message">${message}</span>
-                                  </div>`;
-
-        // Clear the textarea
-        document.getElementById('messageInput').value = "";
+        if (response.ok) {
+            const chatWindow = document.querySelector('.chat-window');
+            chatWindow.innerHTML += `<div class="message sent">
+                                        <span class="user">You:</span>
+                                        <span class="message">${message}</span>
+                                      </div>`;
+            document.getElementById('messageInput').value = "";
+        } else {
+            alert(`Server error: ${result.error}`);
+        }
     } catch (error) {
-        console.error('Error posting data:', error);
+        console.error('Error posting message:', error);
         alert('Error sending message');
     }
-}
-
-// Optional: Function to fetch and display data (GET)
-async function fetchData() {
-    try {
-        const response = await fetch(apiUrl, { method: 'GET' });
-        const data = await response.json();
-        console.log('GET response:', data);
-        alert('Data fetched: ' + JSON.stringify(data));
-    } catch (error) {
-        console.error('Error fetching data:', error);
-    }
-}
+};

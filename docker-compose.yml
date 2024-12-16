@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   nginx-proxy:
     image: nginx:latest
@@ -10,10 +12,10 @@ services:
       - ./certs:/etc/nginx/certs:ro
     networks:
       - mynetwork
+      - mynetwork2
 
   api:
     build: ./api
-    container_name: api
     ports:
       - "5000:5000"
     networks:
@@ -21,7 +23,6 @@ services:
 
   chat-world:
     image: nginx:latest
-    container_name: chat-world
     volumes:
       - ./chat-world:/usr/share/nginx/html:ro
     networks:
@@ -29,12 +30,24 @@ services:
 
   chat-private:
     image: nginx:latest
-    container_name: chat-private
     volumes:
       - ./chat-private:/usr/share/nginx/html:ro
     networks:
-      - mynetwork
+      - mynetwork2
 
 networks:
   mynetwork:
     driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "10.8.6.0/24"  # CIDR block for mynetwork
+          gateway: "10.8.6.1"    # Gateway for mynetwork
+
+  mynetwork2:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "10.8.7.0/24"  # CIDR block for mynetwork2
+          gateway: "10.8.7.1"    # Gateway for mynetwork2
